@@ -1,10 +1,12 @@
 const jwt = require('jsonwebtoken')
 const { PrismaClient } = require('@prisma/client')
+const dotenv = require('dotenv')
 
+dotenv.config()
 
 const prisma = new PrismaClient({})
 
-const isAuththenticated = async (req, resizeBy, next) => {
+const isAuththenticated = async (req, res, next) => {
     const token = req.headers["authorization"]?.replace("Bearer ", "")
     if (!token) {
         return res.status(401).json({
@@ -13,7 +15,7 @@ const isAuththenticated = async (req, resizeBy, next) => {
         })
     }
     try {
-        const decodedToken = jwt.verify(token, process.env.JWT_KEY)
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
         if (!decodedToken) {
             return res.status(401).json({
                 success: false,
