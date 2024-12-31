@@ -101,3 +101,45 @@ const loginUser = async (req, res) => {
     }
 };
 
+const forgotPassword = async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required",
+            });
+        }
+
+        const exitedUser = await prisma.user.findUnique({
+            where: {
+                email: email,
+            },
+        });
+
+        if (!exitedUser) {
+            return res.status(400).json({
+                success: false,
+                message: "Email does not exists please register first",
+            });
+        }
+        const update = await prisma.user.update({
+            data: {
+                password: password,
+            },
+            where: {
+                email: email,
+            },
+        });
+        return res.status(200).json({
+            success: true,
+            message: "Password change successfully",
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Server error please try again after some time",
+        });
+    }
+};
+
