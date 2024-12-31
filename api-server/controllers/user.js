@@ -144,7 +144,7 @@ const forgotPassword = async (req, res) => {
 };
 
 export const getUserProfile = async (req, res) => {
-    const id = req.params.id;
+    const id = req.user.id;
     try {
         const user = await prisma.user.findFirst({
             where: {
