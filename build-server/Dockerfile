@@ -10,12 +10,12 @@ RUN  apt-get install git -y
   
 WORKDIR /home/app
 
-COPY package*.json .
-
-RUN npm install
-
 COPY main.sh main.sh
 COPY  script.js script.js
+COPY package*.json .
+COPY kafka.pem kafka.pem
+
+RUN npm install
 
 RUN chmod +x main.sh
 RUN chmod +x script.js

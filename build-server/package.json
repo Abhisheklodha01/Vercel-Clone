@@ -10,7 +10,9 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.717.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "kafkajs": "^2.2.4",
     "mime-types": "^2.1.35"
   }
 }
