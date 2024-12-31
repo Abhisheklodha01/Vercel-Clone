@@ -50,3 +50,54 @@ const registerUser = async (req, res) => {
         });
     }
 };
+
+
+const loginUser = async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required",
+            });
+        }
+
+        const exitedUser = await prisma.user.findUnique({
+            where: {
+                email: email,
+            },
+        });
+
+        if (!exitedUser) {
+            return res.status(400).json({
+                success: false,
+                message: "Email does not exists please register first",
+            });
+        }
+        const isPasswordCorrect = await bcryptjs.compare(
+            password,
+            exitedUser.password
+        );
+        if (!isPasswordCorrect) {
+            return res.status(200).json({
+                success: false,
+                message: "Wrong Password",
+            });
+        }
+        const accessToken = jwt.sign(
+            { id: exitedUser.id, email: exitedUser.email },
+            process.env.JWT_SECRET
+        );
+        return res.status(200).json({
+            success: true,
+            message: "Signin successful",
+            accessToken
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Server error please try again after some time",
+        });
+    }
+};
+
