@@ -1,6 +1,7 @@
 const express = require("express");
 const projectRouter = require('./routes/project.route')
 const deploymentRouter = require('./routes/deployment.route')
+const userRouter = require('./routes/user.route')
 
 
 const app = express();
@@ -12,6 +13,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/projects", projectRouter)
 app.use("/api/deployments", deploymentRouter)
+app.use("/api/users", userRouter)
 
 
 
