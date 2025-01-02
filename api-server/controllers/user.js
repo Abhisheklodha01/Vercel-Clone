@@ -17,7 +17,7 @@ const registerUser = async (req, res) => {
             });
         }
 
-        const exitedUser = await prisma.user.findUnique({
+        const exitedUser = await prisma.user.findFirst({
             where: {
                 email: email,
             },
@@ -37,16 +37,18 @@ const registerUser = async (req, res) => {
                 password: hashPassword,
             },
         });
-        const accessToken = jwt.sign(
+        const token = jwt.sign(
             { id: newUser.id, email: newUser.email },
             process.env.JWT_SECRET
         );
         return res.status(200).json({
             success: true,
             message: "Registration successful",
-            accessToken
+            token
         });
     } catch (error) {
+        console.log(error);
+        
         return res.status(500).json({
             success: false,
             message: "Server error please try again after some time",
@@ -65,7 +67,7 @@ const loginUser = async (req, res) => {
             });
         }
 
-        const exitedUser = await prisma.user.findUnique({
+        const exitedUser = await prisma.user.findFirst({
             where: {
                 email: email,
             },
@@ -87,14 +89,14 @@ const loginUser = async (req, res) => {
                 message: "Wrong Password",
             });
         }
-        const accessToken = jwt.sign(
+        const token = jwt.sign(
             { id: exitedUser.id, email: exitedUser.email },
             process.env.JWT_SECRET
         );
         return res.status(200).json({
             success: true,
             message: "Signin successful",
-            accessToken
+            token
         });
     } catch (error) {
         return res.status(500).json({
@@ -114,7 +116,7 @@ const forgotPassword = async (req, res) => {
             });
         }
 
-        const exitedUser = await prisma.user.findUnique({
+        const exitedUser = await prisma.user.findFirst({
             where: {
                 email: email,
             },
@@ -146,10 +148,10 @@ const forgotPassword = async (req, res) => {
     }
 };
 
-export const getUserProfile = async (req, res) => {
-    const id = req.user.id;
+const getUserProfile = async (req, res) => {
     try {
-        const user = await prisma.user.findFirst({
+        const id = req.user.id;
+        const user = await prisma.user.findUnique({
             where: {
                 id: id,
             },
