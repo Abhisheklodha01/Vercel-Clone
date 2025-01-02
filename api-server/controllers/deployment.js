@@ -63,69 +63,82 @@ io.listen(9001, () => {
 });
 
 const createDeployment = async (req, res) => {
-  const { projectId, slug } = req.body;
-  const projectSlug = slug ? slug : generateSlug();
+  const { projectId } = req.body;
 
-  const project = await prisma.project.findUnique({
-    where: {
-      id: projectId,
-    },
-  });
-
-  if (!project) {
-    return res.status(404).json({
-      message: "Project not found",
-    });
-  }
-  // check for running deployement
-
-  const deployement = await prisma.deployment.create({
-    data: {
-      project: { connect: { id: projectId } },
-      status: "QUEUED",
-    },
-  });
-
-  // spin the container
-  const command = new RunTaskCommand({
-    cluster: config.CLUSTER,
-    taskDefinition: config.TASK,
-    launchType: "FARGATE",
-    count: 1,
-    networkConfiguration: {
-      awsvpcConfiguration: {
-        assignPublicIp: "ENABLED",
-        subnets: [
-          "subnet-07a58c57af8b2ebe0",
-          "subnet-0b24ede9cbca2dc5a",
-          "subnet-0e0166b9a88b979f7",
-        ],
-        securityGroups: ["sg-0a56fe87620cecfc9"],
+  try {
+    const project = await prisma.project.findUnique({
+      where: {
+        id: projectId,
       },
-    },
-    overrides: {
-      containerOverrides: [
-        {
-          name: "SEREVER-BUILDER-IMAGE",
-          environment: [
-            { name: "GIT_REPOSITORY_URL", value: project.gitUrl },
-            { name: "PROJECT_ID", value: projectId },
-            { name: "DEPLOYMENT_ID", value: deployement.id },
+    });
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found",
+      });
+    }
+    // check for running deployement
+
+    const deployement = await prisma.deployment.create({
+      data: {
+        project: { connect: { id: projectId } },
+        status: "QUEUED",
+      },
+    });
+
+    // spin the container
+    const command = new RunTaskCommand({
+      cluster: config.CLUSTER,
+      taskDefinition: config.TASK,
+      launchType: "FARGATE",
+      count: 1,
+      networkConfiguration: {
+        awsvpcConfiguration: {
+          assignPublicIp: "ENABLED",
+          subnets: [
+            "subnet-07a58c57af8b2ebe0",
+            "subnet-0b24ede9cbca2dc5a",
+            "subnet-0e0166b9a88b979f7",
           ],
+          securityGroups: ["sg-0a56fe87620cecfc9"],
         },
-      ],
-    },
-  });
-  await ecsClient.send(command);
-  return res.json({
-    status: "queued",
-    data: {
-      projectId,
-      status: "QUEUED",
-      deploymentId: deployement.id,
-      url: `http://${projectId}.localhost:8000` 
-    },
-  });
+      },
+      overrides: {
+        containerOverrides: [
+          {
+            name: "SEREVER-BUILDER-IMAGE",
+            environment: [
+              { name: "GIT_REPOSITORY_URL", value: project.gitUrl },
+              { name: "PROJECT_ID", value: project.subDomain },
+              { name: "DEPLOYMENT_ID", value: deployement.id },
+            ],
+          },
+        ],
+      },
+    });
+    await ecsClient.send(command);
+    await prisma.deployment.update({
+      where: {
+        id: deployement.id
+      },
+      data: {
+        status: "READY"
+      }
+    })
+    return res.json({
+      data: {
+        projectId,
+        status: "QUEUED",
+        deploymentId: deployement.id,
+        url: `http://${project.subDomain}.localhost:8000`
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Error in deployment"
+    })
+  }
 };
 
 async function kafkaConsumer() {
@@ -141,8 +154,6 @@ async function kafkaConsumer() {
       resolveOffset,
     }) {
       const messages = batch.messages;
-      console.log(`Recieved ${messages.length} messages..`);
-
       for (const message of messages) {
         const stringMessage = message.value.toString();
         const { PROJECT_ID, DEPLOYMENT_ID, log } = JSON.parse(stringMessage);
@@ -158,7 +169,6 @@ async function kafkaConsumer() {
             ],
             format: "JSONEachRow",
           });
-          console.log("Query id: ", query_id);
           resolveOffset(message.offset);
           await commitOffsetsIfNecessary();
           await heartbeat();
@@ -173,8 +183,6 @@ kafkaConsumer();
 
 const getDeployementLogs = async (req, res) => {
   const id = req.params.id;
-  console.log(id);
-
   try {
     const logs = await client.query({
       query: `SELECT event_id, deployment_id, log, timestamp from log_events where deployment_id = {deployment_id:String}`,
