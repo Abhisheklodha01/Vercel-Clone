@@ -12,7 +12,7 @@ const proxy = httpProxy.createProxy()
 
 app.use((req, res) => {
     const hostName = req.hostname;
-    const subDomain = hostName.split('.')[0]
+    const subDomain = hostName.split('.vercel-clone-ox05.onrender.com')[0]
 
     const resolveTo = `${BASE_PATH}/${subDomain}`
     console.log(BASE_PATH);
