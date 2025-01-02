@@ -1,4 +1,2 @@
 node_modules/
 .env
-kafka.pem
-ca.pem
