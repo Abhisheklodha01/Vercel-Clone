@@ -23,16 +23,16 @@ app.use((req, res) => {
 
     const resolveTo = `${BASE_PATH}/${subDomain}`;
     console.log('Resolved Target:', resolveTo);
-    return proxy.web(req, res, {target: resolveTo, changeOrigin: true})
+    return proxy.web(req, res, { target: resolveTo, changeOrigin: true, secure: true })
 })
 
 proxy.on('proxyReq', (proxyReq, req, res) => {
     const url = req.url
-    if(url === '/') {
+    if (url === '/') {
         proxyReq.path += 'index.html'
     }
     console.log(proxyReq.path);
-    
+
 })
 
 
