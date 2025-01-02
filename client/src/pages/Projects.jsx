@@ -65,7 +65,7 @@ const Projects = () => {
                 Project Url: {"  "}{" "}
                 <span className="text-blue-500 font-semibold">
                   <a href={"http://" + project?.name + ".localhost:8000"}>
-                    {"http://" + project?.name + ".localhost:8000"}
+                    {"http://" + project?.subDomain + ".localhost:8000"}
                   </a>
                 </span>
               </p>
